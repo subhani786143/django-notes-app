@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    
+    stages{
+        
+        stage("Code"){
+         steps{
+            echo "Cloning the code from github"
+            git url:"https://github.com/RitikPyCode/django-notes-app.git", branch:"main"
+            
+            }
+        }
+        stage("Build"){
+            steps{
+                echo "Building the Images"
+                sh "docker build -t my-note-app ."
+            }
+        }
+        stage("Push to Docker Hub"){
+         steps{
+            echo "Pushing to the code on docker HUB"
+            withCredentials([usernamePassword(credentialsId:"dockerhub123", passwordVariable: "dockerhubPass", usernameVariable:"dockerhubUser")]){
+            sh "docker tag my-note-app ${env.dockerhubUser}/my-note-app:latest"
+            sh "docker login -u ${env.dockerhubUser} -p ${env.dockerhubPass}"
+            sh "docker push ${env.dockerhubUser}/my-note-app:latest"
+                
+            }
+            }
+        }
+        stage("Deploy"){
+            steps{
+            echo "Deploying the container"
+            sh "docker-compose down && docker-compose up -d"
+            }
+        }
+    }
+    
+}
